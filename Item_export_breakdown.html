@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Item Export Breakdown</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 40px;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+    h1 {
+      margin-bottom: 5px;
+      font-size: 2rem;
+      color: #222;
+    }
+    p {
+      margin-bottom: 20px;
+      color: #555;
+      font-size: 1rem;
+    }
+    input[type="file"], label, button {
+      margin: 10px 0;
+      display: block;
+      font-size: 0.95rem;
+    }
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #clearFile { background-color: #dc3545; }
+    #clearFile:hover { background-color: #a71d2a; }
+    #downloadCSV { background-color: #007BFF; margin-bottom: 10px; }
+    #downloadCSV:hover { background-color: #0056b3; }
+    table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 10px; }
+    th, td { padding: 12px 16px; border-bottom: 1px solid #e0e0e0; text-align: left; }
+    th { background-color: #f1f3f5; font-weight: 600; }
+    tr:nth-child(even) { background-color: #fafafa; }
+    tr:last-child td { border-bottom: none; }
+    #comboOptions, #nameValidation { display: inline-block; vertical-align: top; width: 48%; margin-right: 2%; margin-bottom: 20px; padding: 20px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    #nameValidation { margin-right: 0; }
+    #comboOptions h2, #nameValidation h2 { margin-top: 0; font-size: 1.2rem; color: #444; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin-bottom: 12px; }
+    label { display: block; margin-bottom: 8px; cursor: pointer; }
+    input[type=radio] { margin-right: 8px; }
+    #downloadContainer { margin-top: 10px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Item Export Breakdown</h1>
+  <p>Upload a CSV file to analyze the breakdown of combos and validate that item names comply with WEB-SRM restrictions.</p>
+
+  <input type="file" id="csvFile" accept=".csv" />
+  <button id="clearFile">Clear File</button>
+
+  <div style="display:flex; justify-content: space-between;">
+    <div id="comboOptions">
+      <h2>Combo Breakdown</h2>
+      <label><input type="radio" name="viewOption" id="filterCheckbox" checked /> Show only combos with items and sub-items</label>
+      <label><input type="radio" name="viewOption" id="showAllCheckbox" /> Show all combos</label>
+    </div>
+
+    <div id="nameValidation">
+      <h2>WEB-SRM Item Name Validation</h2>
+      <label><input type="radio" name="viewOption" id="showInvalidCheckbox" /> Show invalid items only</label>
+      <label><input type="radio" name="viewOption" id="listNamesCheckbox" /> Show all items</label>
+    </div>
+  </div>
+
+  <div id="downloadContainer" style="display:none;">
+    <button id="downloadCSV">Download Table as CSV</button>
+  </div>
+
+  <table id="resultTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>SKU</th>
+        <th>Combo Name / Item Name</th>
+        <th class="typeColumn">Type</th>
+        <th class="validityColumn">Validity Reason</th>
+        <th>Groups</th>
+        <th>Items</th>
+        <th>Sub-items</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const fileInput = document.getElementById('csvFile');
+    const clearButton = document.getElementById('clearFile');
+    const downloadButton = document.getElementById('downloadCSV');
+    const downloadContainer = document.getElementById('downloadContainer');
+    const filterCheckbox = document.getElementById('filterCheckbox');
+    const showAllCheckbox = document.getElementById('showAllCheckbox');
+    const listNamesCheckbox = document.getElementById('listNamesCheckbox');
+    const showInvalidCheckbox = document.getElementById('showInvalidCheckbox');
+    const table = document.getElementById('resultTable');
+    const tbody = table.querySelector('tbody');
+    const validityTh = table.querySelector('.validityColumn');
+    const typeTh = table.querySelector('.typeColumn');
+    let csvData = null;
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => { csvData = e.target.result; renderTable(); };
+      reader.readAsText(file);
+    });
+
+    clearButton.addEventListener('click', () => {
+      csvData=null; fileInput.value=''; tbody.innerHTML=''; table.style.display='none'; downloadContainer.style.display='none';
+    });
+
+    downloadButton.addEventListener('click', () => {
+      if (!table || tbody.children.length===0) return;
+      let csvContent='';
+      const visibleHeaders = Array.from(table.querySelectorAll('thead th')).filter(th => th.style.display !== 'none');
+      csvContent += visibleHeaders.map(th=>th.innerText).join(',')+'\n';
+      Array.from(tbody.querySelectorAll('tr')).forEach(tr=>{
+        const cells = Array.from(tr.querySelectorAll('td')).filter(td=>td.style.display!=='none');
+        csvContent += cells.map(td=>`"${td.innerText}"`).join(',')+'\n';
+      });
+      const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+      const link=document.createElement('a');
+      link.href=URL.createObjectURL(blob);
+      link.download='table_result.csv';
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    });
+
+    [filterCheckbox, showAllCheckbox, listNamesCheckbox, showInvalidCheckbox].forEach(radio => radio.addEventListener('change', renderTable));
+
+    function parseCSVLine(line){const result=[];let current='';let inQuotes=false;for(let i=0;i<line.length;i++){const char=line[i];if(char=='"') inQuotes=!inQuotes;else if(char==',' && !inQuotes){result.push(current.trim()); current='';}else{current+=char;}} result.push(current.trim()); return result;}
+
+    function renderTable(){
+      if(!csvData) return;
+      const rows = csvData.trim().split(/\r?\n/).map(parseCSVLine);
+      if(rows.length===0) return;
+      const header = rows.shift().map(h=>h.trim());
+      const idxSKU = header.indexOf('SKU');
+      const idxName = header.indexOf('Name');
+      const idxParent = header.indexOf('Parent SKU');
+      const idxType = header.indexOf('Type');
+
+      tbody.innerHTML=''; table.style.display='none';
+      downloadContainer.style.display='none';
+      const allowedCharRegex=/[a-zA-Z0-9@:!#$%&'()*+,-.=?_|~\/À-ÿ \u00A0\u2000-\u200B]/;
+
+      function getInvalidReasons(name){
+        const reasons=[];
+        if(name.length<2||name.length>128) reasons.push('Length must be 2-128');
+        if(/^\s|\s$/.test(name)) reasons.push('Cannot start or end with whitespace');
+        const invalidChars=name.split('').filter(c=>!allowedCharRegex.test(c));
+        if(invalidChars.length) reasons.push('Invalid characters: '+[...new Set(invalidChars)].join(', '));
+        return reasons.join('; ');
+      }
+
+      validityTh.style.display=(filterCheckbox.checked||showAllCheckbox.checked)?'none':'';
+
+      if(listNamesCheckbox.checked||showInvalidCheckbox.checked){
+        rows.forEach(row=>{
+          const sku=row[idxSKU]?.trim()||'';
+          const name=row[idxName]?.trim().replace(/^"|"$/g,'')||'';
+          const type=row[idxType]?.trim()||'';
+          if(!name) return;
+          const reason=getInvalidReasons(name);
+          if(showInvalidCheckbox.checked&&!reason) return;
+          const tr=document.createElement('tr');
+          tr.innerHTML=`<td>${sku}</td><td>${name}</td><td>${type}</td><td>${reason||'Valid'}</td>`;
+          tbody.appendChild(tr);
+        });
+        table.querySelector('thead').innerHTML='<tr><th>SKU</th><th>Item Name</th><th>Type</th><th>Validity Reason</th></tr>';
+        table.style.display='table'; downloadContainer.style.display='block'; return;
+      }
+
+      table.querySelector('thead').innerHTML=`<tr>
+        <th>SKU</th>
+        <th>Combo Name</th>
+        <th>Type</th>
+        <th style='display:none;'>Validity Reason</th>
+        <th>Groups</th>
+        <th>Items</th>
+        <th>Sub-items</th>
+      </tr>`;
+
+      const skuTypeMap={}; rows.forEach(row=>{const sku=row[idxSKU]?.trim(); const type=row[idxType]?.trim(); if(sku&&type) skuTypeMap[sku]=type.toLowerCase();});
+      const items=rows.map(row=>({sku:row[idxSKU]?.trim(), name:row[idxName]?.trim().replace(/^"|"$/g,''), parent:row[idxParent]?.trim(), type:row[idxType]?.trim()}));
+
+      items.forEach(item=>{if(!item.type)return; if(item.type.toLowerCase()==='combo'){
+        const relatedItems=items.filter(i=>i.parent===item.sku&&i.sku);
+        let groupCount=0,itemCount=0,subItemCount=0;
+        relatedItems.forEach(i=>{const t=skuTypeMap[i.sku]; if(t==='group')groupCount++; else if(t==='item')itemCount++; else if(t==='sub-item')subItemCount++;});
+        if(filterCheckbox.checked&&(itemCount+subItemCount)===0) return;
+        const reason=getInvalidReasons(item.name);
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${item.sku||''}</td><td>${item.name||''}</td><td>${item.type||''}</td><td style='display:none;'>${reason||'Valid'}</td><td>${groupCount}</td><td>${itemCount}</td><td>${subItemCount}</td>`;
+        tbody.appendChild(tr);
+      }});
+      if(tbody.children.length>0){ table.style.display='table'; downloadContainer.style.display='block'; }
+    }
+  </script>
+</body>
+</html>
