@@ -1,0 +1,106 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 40px;
+  background-color: #1e1e1e;
+  color: #f4f4f4;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body.light-mode {
+  background-color: #ffffff;
+  color: #1e1e1e;
+}
+
+h1 { margin-bottom: 5px; font-size: 2rem; }
+p { margin-bottom: 20px; font-size: 1rem; }
+
+input[type="file"], label, button, select { 
+  margin: 10px 0; 
+  display: block; 
+  font-size: 0.95rem; 
+}
+
+select {
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #2c2c2c;
+  color: #f4f4f4;
+  border: 1px solid #444;
+  width: 100%;
+}
+
+body.light-mode select {
+  background-color: #fff;
+  color: #1e1e1e;
+  border: 1px solid #ccc;
+}
+
+button { 
+  padding: 8px 16px; 
+  border: none; 
+  border-radius: 4px; 
+  cursor: pointer; 
+  transition: background-color 0.3s ease; 
+}
+
+#clearFile { background-color: #dc3545; color: #fff; }
+#clearFile:hover { background-color: #a71d2a; }
+
+#downloadCSV { background-color: #007BFF; color: #fff; margin-bottom: 10px; }
+#downloadCSV:hover { background-color: #0056b3; }
+
+.control-container {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.control-box {
+  display: inline-block;
+  vertical-align: top;
+  width: 31%;
+  margin-bottom: 20px;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: background-color 0.3s, color 0.3s;
+  box-sizing: border-box;
+  background-color: #2c2c2c;
+}
+
+body.light-mode .control-box {
+  background-color: #f4f4f4;
+}
+
+h2 { 
+  margin-top: 0; 
+  font-size: 1.2rem; 
+  border-bottom: 1px solid #555; 
+  padding-bottom: 8px; 
+  margin-bottom: 12px; 
+}
+
+label { display: block; margin-bottom: 8px; cursor: pointer; }
+input[type=radio] { margin-right: 8px; }
+
+table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  border-radius: 8px; 
+  overflow: hidden; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+  margin-top: 10px; 
+}
+
+th, td { padding: 12px 16px; border-bottom: 1px solid #444; text-align: left; }
+th { font-weight: 600; background-color: #3a3a3a; }
+
+body.light-mode th { background-color: #e0e0e0; border-bottom: 1px solid #ccc; }
+body.light-mode td { border-bottom: 1px solid #eee; }
+
+#themeToggle { 
+  position: absolute; 
+  top: 20px; 
+  right: 40px; 
+  padding: 6px 12px; 
+}
