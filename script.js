@@ -55,19 +55,34 @@ function parseCSVLine(line) {
     return result;
 }
 
+// --- Helper: Clean Menu Name ---
+function extractRootMenu(segment) {
+    // 1. Split by "/" ONLY if not preceded by double backslashes (\\)
+    // Regex explanation: (?<!\\\\) is a negative lookbehind for two literal backslashes
+    let root = segment.split(/(?<!\\\\)\//)[0].trim();
+    
+    // 2. Unescape: Replace double backslash followed by slash or comma with just the character
+    // "NYE 12\\/31\\/2025" -> "NYE 12/31/2025"
+    return root.replace(/\\\\([,/])/g, '$1');
+}
+
 // --- Menu Dropdown Logic ---
 function updateMenuDropdown() {
     const rows = csvData.trim().split(/\r?\n/).map(parseCSVLine);
-    const idxMenu = rows[0].map(h => h.trim()).indexOf('Menu/Screen');
+    const header = rows[0].map(h => h.trim());
+    const idxMenu = header.indexOf('Menu/Screen');
     if (idxMenu === -1) return;
 
     const uniqueRootMenus = new Set();
     for (let i = 1; i < rows.length; i++) {
         const rawValue = rows[i][idxMenu];
         if (!rawValue) continue;
-        const segments = rawValue.split(/(?<!\\),/);
+        
+        // Split by comma only if not preceded by double backslashes
+        const segments = rawValue.split(/(?<!\\\\),/);
+        
         segments.forEach(seg => {
-            const rootMenu = seg.split('/')[0].trim();
+            const rootMenu = extractRootMenu(seg);
             if (rootMenu) uniqueRootMenus.add(rootMenu);
         });
     }
@@ -92,11 +107,16 @@ function renderTable() {
 
     tbody.innerHTML = '';
     const selectedRoot = menuSelect.value;
+
     const filteredRows = rows.filter(row => {
         if (selectedRoot === "All") return true;
         const rawValue = row[idxMenu];
         if (!rawValue) return false;
-        return rawValue.split(/(?<!\\),/).some(seg => seg.split('/')[0].trim() === selectedRoot);
+        
+        // Split raw value by comma (respecting escapes) and check if any segment matches selected root
+        return rawValue.split(/(?<!\\\\),/).some(seg => {
+            return extractRootMenu(seg) === selectedRoot;
+        });
     });
 
     function getInvalidReasons(name) {
@@ -111,7 +131,6 @@ function renderTable() {
             }
         }
         if (invalidChars.length > 0) {
-            // Square brackets removed here
             reasons.push(`Invalid characters: ${invalidChars.join(', ')}`);
         }
         return reasons.join('; ');
