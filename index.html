@@ -10,7 +10,7 @@
   <button id="themeToggle">Dark mode: On</button>
   
   <h1>Item Export Breakdown</h1>
-  <p>Upload a CSV file to analyze combos and validate item names.</p>
+  <p>Upload a CSV file to analyze combos and validate item names. Blank names are automatically hidden in validation views.</p>
 
   <input type="file" id="csvFile" accept=".csv" />
   <button id="clearFile">Clear File</button>
@@ -18,12 +18,12 @@
   <div class="control-container">
     <div id="comboOptions" class="control-box">
       <h2>Combo Breakdown</h2>
-      <label><input type="radio" name="viewOption" id="filterCheckbox" checked /> Show only combos with items/sub-items</label>
+      <label><input type="radio" name="viewOption" id="filterCheckbox" checked /> Show only combos with items</label>
       <label><input type="radio" name="viewOption" id="showAllCheckbox" /> Show all combos</label>
     </div>
 
     <div id="nameValidation" class="control-box">
-      <h2>WEB-SRM Item Name Validation</h2>
+      <h2>Item Name Validation</h2>
       <label><input type="radio" name="viewOption" id="showInvalidCheckbox" /> Show invalid items only</label>
       <label><input type="radio" name="viewOption" id="listNamesCheckbox" /> Show all items</label>
     </div>
@@ -33,6 +33,14 @@
       <label for="menuSelect">Select Main Menu:</label>
       <select id="menuSelect">
         <option value="All">-- All Menus --</option>
+      </select>
+    </div>
+
+    <div id="sharingFilterSection" class="control-box">
+      <h2>Sharing Filter</h2>
+      <label for="sharingSelect">Select Sharing Status:</label>
+      <select id="sharingSelect">
+        <option value="All">-- All Statuses --</option>
       </select>
     </div>
   </div>
